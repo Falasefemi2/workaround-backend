@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS departments;
+DROP TABLE IF EXISTS units;
+DROP TABLE IF EXISTS designations;

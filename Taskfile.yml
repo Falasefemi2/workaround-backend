@@ -1,0 +1,73 @@
+version: "3"
+
+dotenv: ['.env']
+
+tasks:
+
+  run:
+    desc: Run the API server
+    cmds:
+      - go run ./cmd/server
+
+  build:
+    desc: Build API binary
+    cmds:
+      - go build -o bin/server ./cmd/server
+
+  tidy:
+    desc: Tidy Go dependencies
+    cmds:
+      - go mod tidy
+
+  fmt:
+    desc: Format Go code
+    cmds:
+      - go fmt ./...
+
+  test:
+    desc: Run Go tests
+    cmds:
+      - go test ./...
+
+  coverage:
+    desc: Run tests with coverage
+    cmds:
+      - go test -coverprofile=coverage.out ./...
+
+  lint:
+    desc: Lint Go project
+    cmds:
+      - golangci-lint run ./...
+
+  db:migrate:
+    desc: Run database migrations
+    cmds:
+      - migrate -path db/migrations -database "$DATABASE_URL" up
+
+  db:rollback:
+    desc: Roll back last migration
+    cmds:
+      - migrate -path db/migrations -database "$DATABASE_URL" down 1
+
+  db:status:
+    desc: Check migration version
+    cmds:
+      - migrate -path db/migrations -database "$DATABASE_URL" version
+
+  db:new:
+    desc: Create a new migration file
+    cmds:
+      - migrate create -ext sql -dir db/migrations -seq {{.CLI_ARGS}}
+
+  db:generate:
+    desc: Generate Go code from SQL (sqlc)
+    cmds:
+      - sqlc generate
+
+  ci:
+    desc: Run all checks (fmt + lint + test + build)
+    deps:
+      - fmt
+      - lint
+      - test
+      - build
