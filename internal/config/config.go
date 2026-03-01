@@ -14,10 +14,12 @@ type Config struct {
 	Primary  PrimaryConfig  `validate:"required"`
 	Server   ServerConfig   `validate:"required"`
 	Database DatabaseConfig `validate:"required"`
+	Email    EmailConfig    `validate:"required"`
 }
 
 type PrimaryConfig struct {
-	Env string `validate:"required,oneof=development staging production"`
+	Env       string `validate:"required,oneof=development staging production"`
+	JWTSecret string `validate:"required"`
 }
 
 type ServerConfig struct {
@@ -36,12 +38,20 @@ type DatabaseConfig struct {
 	ConnMaxIdleTime time.Duration `validate:"required"`
 }
 
+type EmailConfig struct {
+	Host     string `validate:"required"`
+	Port     int    `validate:"required"`
+	Username string `validate:"required"`
+	Password string `validate:"required"`
+}
+
 func Load() (*Config, error) {
 	_ = godotenv.Load()
 
 	cfg := &Config{
 		Primary: PrimaryConfig{
-			Env: getEnv("APP_ENV", "development"),
+			Env:       getEnv("APP_ENV", "development"),
+			JWTSecret: getEnv("JWT_SECRET", ""),
 		},
 		Server: ServerConfig{
 			Port:          getEnvAsInt("PORT", 8080),
@@ -56,6 +66,12 @@ func Load() (*Config, error) {
 			MaxIdleConns:    getEnvAsInt("DB_MAX_IDLE_CONNS", 25),
 			ConnMaxLifetime: getEnvAsDuration("DB_CONN_MAX_LIFETIME", time.Hour),
 			ConnMaxIdleTime: getEnvAsDuration("DB_CONN_MAX_IDLE_TIME", 30*time.Minute),
+		},
+		Email: EmailConfig{
+			Host:     getEnv("SMTP_HOST", "smtp.gmail.com"),
+			Port:     getEnvAsInt("SMTP_PORT", 587),
+			Username: getEnv("SMTP_USERNAME", ""),
+			Password: getEnv("SMTP_PASSWORD", ""),
 		},
 	}
 

@@ -3,7 +3,12 @@ package server
 import (
 	"net/http"
 
+	db "github.com/falasefemi2/workaround-backend/db/generated"
 	"github.com/falasefemi2/workaround-backend/internal/config"
+	"github.com/falasefemi2/workaround-backend/internal/email"
+	"github.com/falasefemi2/workaround-backend/internal/handler"
+	"github.com/falasefemi2/workaround-backend/internal/repository"
+	"github.com/falasefemi2/workaround-backend/internal/service"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
@@ -24,6 +29,19 @@ func New(pool *pgxpool.Pool, cfg *config.Config) http.Handler {
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
+
+	queries := db.New(pool)
+
+	userRepo := repository.NewUserRepo(queries)
+	userService := service.NewUserService(userRepo, email.SMTPConfig{
+		Host:     cfg.Email.Host,
+		Port:     cfg.Email.Port,
+		Username: cfg.Email.Username,
+		Password: cfg.Email.Password,
+	}, cfg.Primary.JWTSecret)
+
+	userHandler := handler.NewUserHandler(userService)
+	userHandler.RegisterRoutes(r)
 
 	// Health check
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {

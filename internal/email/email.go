@@ -1,38 +1,34 @@
 package email
 
 import (
-	"fmt"
-
 	gomail "gopkg.in/mail.v2"
 )
 
-func Email() {
+type EmailParams struct {
+	To      string
+	Subject string
+	Body    string
+}
+
+type SMTPConfig struct {
+	Host     string
+	Port     int
+	Username string
+	Password string
+}
+
+func SendEmail(cfg SMTPConfig, params EmailParams) error {
 	message := gomail.NewMessage()
-	message.SetHeader("From", "femifalase228@gmail.com")
-	message.SetHeader("To", "falasefemi31@gmail.com")
-	message.SetHeader("Subject", "This is an email sent via Gomail and Gmail SMTP")
+	message.SetHeader("From", cfg.Username)
+	message.SetHeader("To", params.To)
+	message.SetHeader("Subject", params.Subject)
+	message.SetBody("text/html", params.Body)
 
-	message.SetBody("text/html", `
-        <html>
-            <body>
-                <h1>This is a Test Email</h1>
-                <p><b>Hello!</b> This is a test email with HTML formatting.</p>
-                <p>Thanks,<br>Mailtrap</p>
-            </body>
-        </html>
-    `)
-
-	dialer := gomail.NewDialer(
-		"smtp.gmail.com",
-		587,
-		"femifalase228@gmail.com",
-		"urea rfjq kzig oetg",
-	)
+	dialer := gomail.NewDialer(cfg.Host, cfg.Port, cfg.Username, cfg.Password)
 
 	if err := dialer.DialAndSend(message); err != nil {
-		fmt.Println("Error:", err)
-		panic(err)
-	} else {
-		fmt.Println("Email sent successfully!")
+		return err
 	}
+
+	return nil
 }
