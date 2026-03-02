@@ -6,12 +6,16 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"golang.org/x/crypto/bcrypt"
 
 	db "github.com/falasefemi2/workaround-backend/db/generated"
 	"github.com/falasefemi2/workaround-backend/internal/email"
 	"github.com/falasefemi2/workaround-backend/internal/repository"
-	"github.com/jackc/pgx/v5"
-	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -82,6 +86,68 @@ func (s *UserService) CreateUser(ctx context.Context, params db.CreateUserParams
 	}
 
 	return user, nil
+}
+
+func (s *UserService) DeleteUser(ctx context.Context, userID uuid.UUID) error {
+	return s.repo.DeleteUser(ctx, userID)
+}
+
+func (s *UserService) GetUserByEmail(ctx context.Context, email string) (db.User, error) {
+	user, err := s.repo.GetUserByEmail(ctx, email)
+	if err != nil {
+		return db.User{}, err
+	}
+	return user, nil
+}
+
+func (s *UserService) GetUserByID(ctx context.Context, userID uuid.UUID) (db.User, error) {
+	user, err := s.repo.GetUserByID(ctx, userID)
+	if err != nil {
+		return db.User{}, err
+	}
+	return user, nil
+}
+
+func (s *UserService) ListUsers(ctx context.Context, arg db.ListUsersParams) ([]db.User, error) {
+	user, err := s.repo.ListUser(ctx, arg)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func (s *UserService) UpdateUser(ctx context.Context, params db.UpdateUserParams) (db.User, error) {
+	user, err := s.repo.UpdateUser(ctx, params)
+	if err != nil {
+		return db.User{}, err
+	}
+	return user, nil
+}
+
+func (s *UserService) Login(ctx context.Context, email, password string) (string, error) {
+	user, err := s.repo.GetUserByEmail(ctx, email)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", ErrInvalidCreds
+	}
+	if err != nil {
+		return "", err // real error
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
+		return "", ErrInvalidCreds
+	}
+	return s.generateToken(user.ID.String(), user.UserType)
+}
+
+func (s *UserService) generateToken(userID, userType string) (string, error) {
+	claims := jwt.MapClaims{
+		"sub":       userID,
+		"user_type": userType,
+		"exp":       time.Now().Add(24 * time.Hour).Unix(),
+		"iat":       time.Now().Unix(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(s.jwtSecret))
 }
 
 func GeneratePassword(length int) (string, error) {
