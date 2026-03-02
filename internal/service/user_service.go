@@ -21,6 +21,7 @@ import (
 var (
 	ErrEmailTaken   = errors.New("email already in use")
 	ErrInvalidCreds = errors.New("invalid email or password")
+	ErrUserNotFound = errors.New("user not found")
 )
 
 const defaultCharset = "abcdefghijklmnopqrstuvwxyz" +

@@ -7,6 +7,7 @@ import (
 	"github.com/falasefemi2/workaround-backend/internal/config"
 	"github.com/falasefemi2/workaround-backend/internal/email"
 	"github.com/falasefemi2/workaround-backend/internal/handler"
+	appmw "github.com/falasefemi2/workaround-backend/internal/middleware"
 	"github.com/falasefemi2/workaround-backend/internal/repository"
 	"github.com/falasefemi2/workaround-backend/internal/service"
 	"github.com/go-chi/chi/middleware"
@@ -17,6 +18,9 @@ import (
 
 func New(pool *pgxpool.Pool, cfg *config.Config) http.Handler {
 	r := chi.NewRouter()
+
+	r.Use(middleware.RequestID)
+	r.Use(middleware.Recoverer)
 
 	// Global middleware
 	r.Use(middleware.RequestID)
@@ -41,7 +45,15 @@ func New(pool *pgxpool.Pool, cfg *config.Config) http.Handler {
 	}, cfg.Primary.JWTSecret)
 
 	userHandler := handler.NewUserHandler(userService)
-	userHandler.RegisterRoutes(r)
+	authMiddleware := appmw.RequireAuth(cfg.Primary.JWTSecret)
+	adminOrHR := appmw.RequireRoles("admin", "hr")
+	rateLimiter := appmw.NewRateLimiter(5, 10)
+	userHandler.RegisterRoutes(
+		r,
+		authMiddleware,
+		adminOrHR,
+		rateLimiter.Limit,
+	)
 
 	// Health check
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
