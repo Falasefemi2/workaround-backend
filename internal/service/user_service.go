@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/big"
@@ -11,6 +12,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"golang.org/x/crypto/bcrypt"
 
 	db "github.com/falasefemi2/workaround-backend/db/generated"
@@ -22,6 +24,7 @@ var (
 	ErrEmailTaken   = errors.New("email already in use")
 	ErrInvalidCreds = errors.New("invalid email or password")
 	ErrUserNotFound = errors.New("user not found")
+	ErrInvalidToken = errors.New("invalid or expired token")
 )
 
 const defaultCharset = "abcdefghijklmnopqrstuvwxyz" +
@@ -30,20 +33,23 @@ const defaultCharset = "abcdefghijklmnopqrstuvwxyz" +
 	"!@#$%^&*()-_=+"
 
 type UserService struct {
-	repo      *repository.UserRepo
-	jwtSecret string
-	smtpCfg   email.SMTPConfig
+	repo         *repository.UserRepo
+	jwtSecret    string
+	smtpCfg      email.SMTPConfig
+	passwordRepo *repository.PasswordRepo
 }
 
 func NewUserService(
 	repo *repository.UserRepo,
 	smtpCfg email.SMTPConfig,
 	jwtSecret string,
+	passwordRepo *repository.PasswordRepo,
 ) *UserService {
 	return &UserService{
-		repo:      repo,
-		jwtSecret: jwtSecret,
-		smtpCfg:   smtpCfg,
+		repo:         repo,
+		jwtSecret:    jwtSecret,
+		smtpCfg:      smtpCfg,
+		passwordRepo: passwordRepo,
 	}
 }
 
@@ -125,8 +131,8 @@ func (s *UserService) UpdateUser(ctx context.Context, params db.UpdateUserParams
 	return user, nil
 }
 
-func (s *UserService) Login(ctx context.Context, email, password string) (string, error) {
-	user, err := s.repo.GetUserByEmail(ctx, email)
+func (s *UserService) Login(ctx context.Context, userEmail, password string) (string, error) {
+	user, err := s.repo.GetUserByEmail(ctx, userEmail)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", ErrInvalidCreds
 	}
@@ -137,6 +143,69 @@ func (s *UserService) Login(ctx context.Context, email, password string) (string
 		return "", ErrInvalidCreds
 	}
 	return s.generateToken(user.ID.String(), user.UserType)
+}
+
+func (s *UserService) ForgotPassword(ctx context.Context, userEmail string) error {
+	user, err := s.repo.GetUserByEmail(ctx, userEmail)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	tokenBytes := make([]byte, 32)
+	_, err = rand.Read(tokenBytes)
+	if err != nil {
+		return err
+	}
+	token := hex.EncodeToString(tokenBytes)
+
+	_, err = s.passwordRepo.CreatePasswordResetToken(ctx, db.CreatePasswordResetTokenParams{
+		UserID:    user.ID,
+		Token:     token,
+		ExpiresAt: pgtype.Timestamptz{Time: time.Now().Add(time.Hour), Valid: true},
+	})
+	if err != nil {
+		return err
+	}
+
+	resetLink := fmt.Sprintf("http://localhost:5173/reset-password?token=%s", token)
+
+	return email.SendEmail(s.smtpCfg, email.EmailParams{
+		To:      user.Email,
+		Subject: "Reset your password",
+		Body: fmt.Sprintf(
+			"Click this link to reset your password: <a href='%s'>%s</a>. Link expires in 1 hour.",
+			resetLink,
+			resetLink,
+		),
+	})
+}
+
+func (s *UserService) ResetPassword(ctx context.Context, token, newPassword string) error {
+	resetToken, err := s.passwordRepo.GetPasswordResetToken(ctx, token)
+	if err != nil {
+		return ErrInvalidToken
+	}
+	if time.Now().After(resetToken.ExpiresAt.Time) {
+		return ErrInvalidToken
+	}
+	// if resetToken.Used {
+	// 	return ErrInvalidToken
+	// }
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	err = s.repo.UpdatePassword(ctx, db.UpdatePasswordParams{
+		ID:           resetToken.UserID,
+		PasswordHash: string(hashedPassword),
+	})
+	if err != nil {
+		return err
+	}
+	return s.passwordRepo.MarkTokenUsed(ctx, token)
 }
 
 func (s *UserService) generateToken(userID, userType string) (string, error) {

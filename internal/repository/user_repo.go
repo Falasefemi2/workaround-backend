@@ -60,3 +60,7 @@ func (r *UserRepo) UpdateUser(ctx context.Context, params db.UpdateUserParams) (
 	}
 	return user, nil
 }
+
+func (r *UserRepo) UpdatePassword(ctx context.Context, arg db.UpdatePasswordParams) error {
+	return r.queries.UpdatePassword(ctx, arg)
+}

@@ -37,12 +37,13 @@ func New(pool *pgxpool.Pool, cfg *config.Config) http.Handler {
 	queries := db.New(pool)
 
 	userRepo := repository.NewUserRepo(queries)
+	passwordRepo := repository.NewPasswordRepo(queries)
 	userService := service.NewUserService(userRepo, email.SMTPConfig{
 		Host:     cfg.Email.Host,
 		Port:     cfg.Email.Port,
 		Username: cfg.Email.Username,
 		Password: cfg.Email.Password,
-	}, cfg.Primary.JWTSecret)
+	}, cfg.Primary.JWTSecret, passwordRepo)
 
 	userHandler := handler.NewUserHandler(userService)
 	authMiddleware := appmw.RequireAuth(cfg.Primary.JWTSecret)
