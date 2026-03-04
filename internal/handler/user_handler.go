@@ -40,12 +40,25 @@ type authRequest struct {
 	Password string `json:"password" validate:"required,min=8"`
 }
 
+type forgetPasswordRequest struct {
+	Email string `json:"email" validate:"required,email"`
+}
+
+type resetPasswordRequest struct {
+	Token       string `json:"token"        validate:"required"`
+	NewPassword string `json:"new_password" validate:"required,min=8"`
+}
+
 func (h *UserHandler) RegisterRoutes(
 	r chi.Router,
 	auth func(http.Handler) http.Handler,
 	adminOrHR func(http.Handler) http.Handler,
 	rateLimit func(http.Handler) http.Handler,
 ) {
+	r.Post("/v1/auth/forgot-password", h.ForgotPassword)
+	r.Post("/v1/auth/reset-password", h.ResetPassword)
+	r.Post("/v1/auth/logout", h.Logout)
+
 	r.Group(func(r chi.Router) {
 		r.Use(rateLimit)
 		r.Post("/v1/auth/login", h.Login)
@@ -300,4 +313,53 @@ func (h *UserHandler) Me(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, map[string]string{
 		"user_id": userID,
 	})
+}
+
+func (h *UserHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
+	var req forgetPasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if errs := appvalidator.Validate(req); errs != nil {
+		response.ValidationError(w, errs)
+		return
+	}
+	err := h.service.ForgotPassword(r.Context(), req.Email)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, "something went wrong")
+		return
+	}
+
+	response.JSON(
+		w,
+		http.StatusOK,
+		map[string]string{"message": "if your email exists you will receive a reset link"},
+	)
+}
+
+func (h *UserHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
+	var req resetPasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if errs := appvalidator.Validate(req); errs != nil {
+		response.ValidationError(w, errs)
+		return
+	}
+	err := h.service.ResetPassword(r.Context(), req.Token, req.NewPassword)
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidToken) {
+			response.Error(w, http.StatusBadRequest, "invalid or expired token")
+			return
+		}
+		response.Error(w, http.StatusInternalServerError, "something went wrong")
+		return
+	}
+	response.JSON(
+		w,
+		http.StatusOK,
+		map[string]string{"message": "password reset successfully"},
+	)
 }
