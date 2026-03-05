@@ -22,9 +22,6 @@ func New(pool *pgxpool.Pool, cfg *config.Config) http.Handler {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Recoverer)
 
-	// Global middleware
-	r.Use(middleware.RequestID)
-	r.Use(middleware.Recoverer)
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{cfg.Server.AllowedOrigin},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -38,17 +35,29 @@ func New(pool *pgxpool.Pool, cfg *config.Config) http.Handler {
 
 	userRepo := repository.NewUserRepo(queries)
 	passwordRepo := repository.NewPasswordRepo(queries)
-	userService := service.NewUserService(userRepo, email.SMTPConfig{
-		Host:     cfg.Email.Host,
-		Port:     cfg.Email.Port,
-		Username: cfg.Email.Username,
-		Password: cfg.Email.Password,
-	}, cfg.Primary.JWTSecret, passwordRepo)
+	deptRepo := repository.NewDepartmentRepo(queries)
+
+	userService := service.NewUserService(
+		userRepo,
+		email.SMTPConfig{
+			Host:     cfg.Email.Host,
+			Port:     cfg.Email.Port,
+			Username: cfg.Email.Username,
+			Password: cfg.Email.Password,
+		},
+		cfg.Primary.JWTSecret,
+		passwordRepo,
+	)
+
+	deptService := service.NewDeptService(deptRepo, userRepo)
 
 	userHandler := handler.NewUserHandler(userService)
+	deptHandler := handler.NewDeptHandler(deptService)
+
 	authMiddleware := appmw.RequireAuth(cfg.Primary.JWTSecret)
 	adminOrHR := appmw.RequireRoles("admin", "hr")
 	rateLimiter := appmw.NewRateLimiter(5, 10)
+
 	userHandler.RegisterRoutes(
 		r,
 		authMiddleware,
@@ -56,7 +65,12 @@ func New(pool *pgxpool.Pool, cfg *config.Config) http.Handler {
 		rateLimiter.Limit,
 	)
 
-	// Health check
+	deptHandler.RegisterRoutes(
+		r,
+		authMiddleware,
+		adminOrHR,
+	)
+
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		_, err := w.Write([]byte("ok"))
 		if err != nil {
