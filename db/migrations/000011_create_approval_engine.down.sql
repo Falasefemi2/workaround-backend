@@ -1,2 +1,2 @@
-DROP IF EXISTS approval_setups;
-DROP IF EXISTS approvals; 
+DROP TABLE IF EXISTS approval_setups;
+DROP TABLE IF EXISTS approvals; 

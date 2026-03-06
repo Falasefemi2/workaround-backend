@@ -1,2 +1,2 @@
-DROP TABLE IF EXISTS levels;
-DROP TABLE IF EXISTS levels_components;
+DROP TABLE IF EXISTS level_components;
+DROP TABLE IF EXISTS levels CASCADE;

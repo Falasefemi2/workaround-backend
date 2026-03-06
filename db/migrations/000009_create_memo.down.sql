@@ -1,2 +1,2 @@
-DROP IF EXISTS memos;
-DROP IF EXISTS memo_documents; 
+DROP TABLE IF EXISTS memo_documents;  
+DROP TABLE IF EXISTS memos; 

@@ -1,1 +1,1 @@
-DROP IF EXISTS vouchers;
+DROP TABLE IF EXISTS vouchers;

@@ -96,35 +96,40 @@ type Hmo struct {
 }
 
 type LeaveRequest struct {
-	ID                   uuid.UUID          `json:"id"`
-	EmployeeID           pgtype.UUID        `json:"employee_id"`
-	LeaveTypeID          pgtype.UUID        `json:"leave_type_id"`
-	Days                 int32              `json:"days"`
-	StartDate            pgtype.Date        `json:"start_date"`
-	ResumptionDate       pgtype.Date        `json:"resumption_date"`
-	ReliefOfficerID      pgtype.UUID        `json:"relief_officer_id"`
-	HandoverNoteUrl      pgtype.Text        `json:"handover_note_url"`
-	LeaveAllowance       pgtype.Bool        `json:"leave_allowance"`
-	Status               pgtype.Text        `json:"status"`
-	CurrentApprovalLevel pgtype.Int4        `json:"current_approval_level"`
-	CreatedAt            pgtype.Timestamptz `json:"created_at"`
+	ID              uuid.UUID          `json:"id"`
+	EmployeeID      pgtype.UUID        `json:"employee_id"`
+	LeaveTypeID     pgtype.UUID        `json:"leave_type_id"`
+	ReliefOfficerID pgtype.UUID        `json:"relief_officer_id"`
+	StartDate       pgtype.Date        `json:"start_date"`
+	EndDate         pgtype.Date        `json:"end_date"`
+	Reason          pgtype.Text        `json:"reason"`
+	Status          pgtype.Text        `json:"status"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
 }
 
 type LeaveType struct {
-	ID          uuid.UUID   `json:"id"`
-	Name        string      `json:"name"`
-	MaxDays     int32       `json:"max_days"`
-	Description pgtype.Text `json:"description"`
+	ID        uuid.UUID          `json:"id"`
+	Name      string             `json:"name"`
+	MaxDays   int32              `json:"max_days"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }
 
 type Level struct {
-	ID              uuid.UUID          `json:"id"`
-	Name            string             `json:"name"`
-	Code            string             `json:"code"`
-	AnnualLeaveDays int32              `json:"annual_leave_days"`
-	AnnualGross     pgtype.Numeric     `json:"annual_gross"`
-	SupportTotal    pgtype.Numeric     `json:"support_total"`
-	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	ID                      uuid.UUID          `json:"id"`
+	Name                    string             `json:"name"`
+	Code                    string             `json:"code"`
+	AnnualLeaveDays         int32              `json:"annual_leave_days"`
+	MinimumLeaveDays        int32              `json:"minimum_leave_days"`
+	TotalAnnualLeaveDays    int32              `json:"total_annual_leave_days"`
+	LeaveExpirationInterval int32              `json:"leave_expiration_interval"`
+	AnnualGross             pgtype.Numeric     `json:"annual_gross"`
+	BasicSalary             pgtype.Numeric     `json:"basic_salary"`
+	TransportAllowance      pgtype.Numeric     `json:"transport_allowance"`
+	DomesticAllowance       pgtype.Numeric     `json:"domestic_allowance"`
+	UtilityAllowance        pgtype.Numeric     `json:"utility_allowance"`
+	LunchSubsidy            pgtype.Numeric     `json:"lunch_subsidy"`
+	SupportTotal            pgtype.Numeric     `json:"support_total"`
+	CreatedAt               pgtype.Timestamptz `json:"created_at"`
 }
 
 type LevelComponent struct {

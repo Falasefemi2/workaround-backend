@@ -1,2 +1,2 @@
-DROP IF EXITS leave_types;
-DROP IF EXITS leave_requests;
+DROP TABLE IF EXISTS leave_requests;
+DROP TABLE IF EXISTS leave_types;

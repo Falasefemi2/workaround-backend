@@ -1,2 +1,2 @@
-DROP IF EXISTS candidates;
-DROP IF EXISTS offers;
+DROP TABLE IF EXISTS offers;       
+DROP TABLE IF EXISTS candidates;   
