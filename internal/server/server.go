@@ -38,6 +38,7 @@ func New(pool *pgxpool.Pool, cfg *config.Config) http.Handler {
 	deptRepo := repository.NewDepartmentRepo(queries)
 	designationRepo := repository.NewDesignationRepo(queries)
 	unitRepo := repository.NewUnitRepo(queries)
+	levelRepo := repository.NewLevelRepo(queries)
 
 	userService := service.NewUserService(
 		userRepo,
@@ -52,15 +53,15 @@ func New(pool *pgxpool.Pool, cfg *config.Config) http.Handler {
 	)
 
 	deptService := service.NewDeptService(deptRepo, userRepo)
-
 	designationService := service.NewDesignationService(designationRepo)
-
 	unitService := service.NewUnitService(unitRepo, userRepo)
+	levelService := service.NewLevelService(levelRepo)
 
 	userHandler := handler.NewUserHandler(userService)
 	deptHandler := handler.NewDeptHandler(deptService)
 	designationHandler := handler.NewDesignationHandler(designationService)
 	unitHandler := handler.NewUnitHandler(unitService)
+	levelHandler := handler.NewLevelHandler(levelService)
 
 	authMiddleware := appmw.RequireAuth(cfg.Primary.JWTSecret)
 	adminOrHR := appmw.RequireRoles("admin", "hr")
@@ -90,6 +91,7 @@ func New(pool *pgxpool.Pool, cfg *config.Config) http.Handler {
 		authMiddleware,
 		adminOrHR,
 	)
+	levelHandler.RegisterRoutes(r, authMiddleware, adminOrHR)
 
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		_, err := w.Write([]byte("ok"))
