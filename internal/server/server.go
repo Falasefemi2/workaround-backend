@@ -41,6 +41,7 @@ func New(pool *pgxpool.Pool, cfg *config.Config) http.Handler {
 	unitRepo := repository.NewUnitRepo(queries)
 	levelRepo := repository.NewLevelRepo(queries)
 	roleRepo := repository.NewRoleRepo(queries)
+	approvalRepo := repository.NewApprovalRepo(queries)
 
 	userService := service.NewUserService(
 		userRepo,
@@ -58,6 +59,7 @@ func New(pool *pgxpool.Pool, cfg *config.Config) http.Handler {
 	unitService := service.NewUnitService(unitRepo, userRepo)
 	levelService := service.NewLevelService(levelRepo)
 	roleService := service.NewRoleService(roleRepo, userRepo)
+	approvalService := service.NewApprovalService(approvalRepo, roleRepo)
 
 	userHandler := handler.NewUserHandler(userService)
 	deptHandler := handler.NewDeptHandler(deptService)
@@ -65,6 +67,7 @@ func New(pool *pgxpool.Pool, cfg *config.Config) http.Handler {
 	unitHandler := handler.NewUnitHandler(unitService)
 	levelHandler := handler.NewLevelHandler(levelService)
 	roleHandler := handler.NewRoleHandler(roleService)
+	approvalHandler := handler.NewApprovalHandler(approvalService)
 
 	authMiddleware := appmw.RequireAuth(cfg.Primary.JWTSecret)
 	adminOrHR := appmw.RequireRoles("admin", "hr")
@@ -76,6 +79,7 @@ func New(pool *pgxpool.Pool, cfg *config.Config) http.Handler {
 	unitHandler.RegisterRoutes(r, authMiddleware, adminOrHR)
 	levelHandler.RegisterRoutes(r, authMiddleware, adminOrHR)
 	roleHandler.RegisterRoutes(r, authMiddleware, adminOrHR)
+	approvalHandler.RegisterRoutes(r, authMiddleware, adminOrHR)
 
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		_, err := w.Write([]byte("ok"))
