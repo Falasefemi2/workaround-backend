@@ -49,6 +49,10 @@ type resetPasswordRequest struct {
 	NewPassword string `json:"new_password" validate:"required,min=8"`
 }
 
+type AuthRequest = authRequest
+type ForgetPasswordRequest = forgetPasswordRequest
+type ResetPasswordRequest = resetPasswordRequest
+
 func (h *UserHandler) RegisterRoutes(
 	r chi.Router,
 	auth func(http.Handler) http.Handler,
@@ -86,6 +90,19 @@ func (h *UserHandler) RegisterRoutes(
 	})
 }
 
+// CreateUser godoc
+// @Summary Create a new user
+// @Description Creates a new user in the system
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param request body CreateUserRequest true "User payload"
+// @Success 201 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 409 {object} response.ErrorResponse
+// @Failure 422 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/auth/users [post]
 func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var req CreateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -115,6 +132,18 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusCreated, user)
 }
 
+// DeleteUser godoc
+// @Summary Delete user
+// @Description Deletes a user by id
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 204 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/users/{id} [delete]
 func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 	if idParam == "" {
@@ -140,6 +169,18 @@ func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// GetUserByEmail godoc
+// @Summary Get user by email
+// @Description Retrieves a user by email address
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param email path string true "User email"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/users/email/{email} [get]
 func (h *UserHandler) GetUserByEmail(w http.ResponseWriter, r *http.Request) {
 	email := chi.URLParam(r, "email")
 	if email == "" {
@@ -160,6 +201,18 @@ func (h *UserHandler) GetUserByEmail(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, user)
 }
 
+// GetUserByID godoc
+// @Summary Get user by id
+// @Description Retrieves a user by id
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/users/{id} [get]
 func (h *UserHandler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 	if idParam == "" {
@@ -186,6 +239,18 @@ func (h *UserHandler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, user)
 }
 
+// ListUsers godoc
+// @Summary List users
+// @Description Returns a paginated list of users
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param limit query int false "Page size"
+// @Param offset query int false "Page offset"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/users [get]
 func (h *UserHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	limitStr := r.URL.Query().Get("limit")
 	offsetStr := r.URL.Query().Get("offset")
@@ -223,6 +288,18 @@ func (h *UserHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, users)
 }
 
+// UpdateUser godoc
+// @Summary Update user
+// @Description Updates the authenticated user profile
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Param request body db.UpdateUserParams true "User payload"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/users/{id} [put]
 func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	userIDStr, ok := r.Context().Value(middleware.UserIDKey).(string)
 	if !ok || userIDStr == "" {
@@ -253,6 +330,19 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, user)
 }
 
+// Login godoc
+// @Summary Login user
+// @Description Authenticates user and sets auth cookie
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param request body AuthRequest true "Login payload"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 401 {object} response.ErrorResponse
+// @Failure 422 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/auth/login [post]
 func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req authRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -279,6 +369,15 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, map[string]string{"message": "logged in successfully"})
 }
 
+// Logout godoc
+// @Summary Logout user
+// @Description Clears auth cookie and logs out user
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Success 200 {object} response.SuccessResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/auth/logout [post]
 func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "auth_token",
@@ -303,6 +402,15 @@ func setAuthCookie(w http.ResponseWriter, token string) {
 	})
 }
 
+// Me godoc
+// @Summary Get authenticated user
+// @Description Returns authenticated user id from token context
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Success 200 {object} response.SuccessResponse
+// @Failure 401 {object} response.ErrorResponse
+// @Router /v1/users/me [get]
 func (h *UserHandler) Me(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(middleware.UserIDKey).(string)
 	if !ok || userID == "" {
@@ -315,6 +423,18 @@ func (h *UserHandler) Me(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// ForgotPassword godoc
+// @Summary Forgot password
+// @Description Sends password reset instructions if email exists
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param request body ForgetPasswordRequest true "Forgot password payload"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 422 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/auth/forgot-password [post]
 func (h *UserHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	var req forgetPasswordRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -338,6 +458,18 @@ func (h *UserHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
+// ResetPassword godoc
+// @Summary Reset password
+// @Description Resets password using reset token
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param request body ResetPasswordRequest true "Reset password payload"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 422 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/auth/reset-password [post]
 func (h *UserHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	var req resetPasswordRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

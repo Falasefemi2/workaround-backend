@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	_ "github.com/falasefemi2/workaround-backend/docs"
 	"github.com/falasefemi2/workaround-backend/internal/config"
 	"github.com/falasefemi2/workaround-backend/internal/server"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -18,6 +19,11 @@ import (
 
 const shutdownTimeout = 30 * time.Second
 
+// @title Workaround Backend API
+// @version 1.0
+// @description REST API documentation for Workaround backend services.
+// @BasePath /
+// @schemes http https
 func main() {
 	// Load configuration
 	cfg, err := config.Load()

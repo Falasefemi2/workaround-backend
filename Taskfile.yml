@@ -39,6 +39,18 @@ tasks:
     cmds:
       - golangci-lint run ./...
 
+  swagger:generate:
+    desc: Generate Swagger docs
+    cmds:
+      - go run github.com/swaggo/swag/cmd/swag@latest init -g cmd/server/main.go -o docs --parseDependency --parseInternal
+
+  swagger:
+    desc: Generate Swagger docs and run the API server
+    deps:
+      - swagger:generate
+    cmds:
+      - go run ./cmd/server
+
   db:migrate:
     desc: Run database migrations
     cmds:

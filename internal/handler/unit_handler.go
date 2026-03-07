@@ -8,7 +8,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 
 	db "github.com/falasefemi2/workaround-backend/db/generated"
 	"github.com/falasefemi2/workaround-backend/internal/response"
@@ -54,6 +53,23 @@ func (h *UnitHandler) RegisterRoutes(
 	})
 }
 
+type AssignUnitLeadRequest struct {
+	UnitLeadID string `json:"unit_lead_id" validate:"required"`
+}
+
+// CreateUnit godoc
+// @Summary Create a new unit
+// @Description Creates a new unit in the system
+// @Tags Units
+// @Accept json
+// @Produce json
+// @Param request body CreateUnitRequest true "Unit payload"
+// @Success 201 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 409 {object} response.ErrorResponse
+// @Failure 422 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/units [post]
 func (h *UnitHandler) CreateUnit(w http.ResponseWriter, r *http.Request) {
 	var req CreateUnitRequest
 
@@ -67,18 +83,13 @@ func (h *UnitHandler) CreateUnit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var deptUUID pgtype.UUID
-	if err := deptUUID.Scan(req.DepartmentID); err != nil {
-		response.Error(w, http.StatusBadRequest, "invalid department_id format")
+	deptUUID, ok := scanUUIDOrError(w, req.DepartmentID, "invalid department_id format")
+	if !ok {
 		return
 	}
-	var leadID pgtype.UUID
-
-	if req.UnitLeadID != "" {
-		if err := leadID.Scan(req.UnitLeadID); err != nil {
-			response.Error(w, http.StatusBadRequest, "invalid unit_lead_id")
-			return
-		}
+	leadID, ok := scanOptionalUUIDOrError(w, req.UnitLeadID, "invalid unit_lead_id")
+	if !ok {
+		return
 	}
 
 	unit, err := h.service.CreateUnit(r.Context(), db.CreateUnitParams{
@@ -99,6 +110,17 @@ func (h *UnitHandler) CreateUnit(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusCreated, unit)
 }
 
+// DeleteUnit godoc
+// @Summary Delete unit
+// @Description Deletes a unit by id
+// @Tags Units
+// @Accept json
+// @Produce json
+// @Param id path string true "Unit ID"
+// @Success 204 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/units/{id} [delete]
 func (h *UnitHandler) DeleteUnit(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 
@@ -116,6 +138,17 @@ func (h *UnitHandler) DeleteUnit(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// GetUnitByID godoc
+// @Summary Get unit by id
+// @Description Retrieves a unit by id
+// @Tags Units
+// @Accept json
+// @Produce json
+// @Param id path string true "Unit ID"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/units/{id} [get]
 func (h *UnitHandler) GetUnitByID(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 
@@ -134,6 +167,18 @@ func (h *UnitHandler) GetUnitByID(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, unit)
 }
 
+// ListUnits godoc
+// @Summary List units
+// @Description Returns a paginated list of units
+// @Tags Units
+// @Accept json
+// @Produce json
+// @Param limit query int false "Page size"
+// @Param offset query int false "Page offset"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/units [get]
 func (h *UnitHandler) ListUnits(w http.ResponseWriter, r *http.Request) {
 	limitStr := r.URL.Query().Get("limit")
 	offsetStr := r.URL.Query().Get("offset")
@@ -171,6 +216,19 @@ func (h *UnitHandler) ListUnits(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, units)
 }
 
+// UpdateUnit godoc
+// @Summary Update unit
+// @Description Updates an existing unit
+// @Tags Units
+// @Accept json
+// @Produce json
+// @Param id path string true "Unit ID"
+// @Param request body UpdateUnitRequest true "Unit payload"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 422 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/units/{id} [put]
 func (h *UnitHandler) UpdateUnit(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 
@@ -204,6 +262,20 @@ func (h *UnitHandler) UpdateUnit(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, unit)
 }
 
+// AssignUnitLead godoc
+// @Summary Assign unit lead
+// @Description Assigns a lead to a unit
+// @Tags Units
+// @Accept json
+// @Produce json
+// @Param id path string true "Unit ID"
+// @Param request body AssignUnitLeadRequest true "Unit lead payload"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 422 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/units/{id}/lead [put]
 func (h *UnitHandler) AssignUnitLead(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 
@@ -213,11 +285,7 @@ func (h *UnitHandler) AssignUnitLead(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	type assignRequest struct {
-		UnitLeadID string `json:"unit_lead_id" validate:"required"`
-	}
-
-	var req assignRequest
+	var req AssignUnitLeadRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		response.Error(w, http.StatusBadRequest, "invalid request body")
@@ -229,10 +297,8 @@ func (h *UnitHandler) AssignUnitLead(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var leadID pgtype.UUID
-
-	if err := leadID.Scan(req.UnitLeadID); err != nil {
-		response.Error(w, http.StatusBadRequest, "invalid unit_lead_id")
+	leadID, ok := scanUUIDOrError(w, req.UnitLeadID, "invalid unit_lead_id")
+	if !ok {
 		return
 	}
 
