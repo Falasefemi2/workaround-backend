@@ -65,6 +65,19 @@ func (h *RoleHandler) RegisterRoutes(
 	})
 }
 
+// CreateRole godoc
+// @Summary Create a new role
+// @Description Creates a new role in the system
+// @Tags Roles
+// @Accept json
+// @Produce json
+// @Param request body CreateRoleRequest true "Role payload"
+// @Success 201 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 409 {object} response.ErrorResponse
+// @Failure 422 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/roles [post]
 func (h *RoleHandler) CreateRole(w http.ResponseWriter, r *http.Request) {
 	var req CreateRoleRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -91,6 +104,17 @@ func (h *RoleHandler) CreateRole(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusCreated, role)
 }
 
+// ListRoles godoc
+// @Summary List roles
+// @Description Returns a paginated list of roles
+// @Tags Roles
+// @Accept json
+// @Produce json
+// @Param limit query int false "Page size"
+// @Param offset query int false "Page offset"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/roles [get]
 func (h *RoleHandler) ListRoles(w http.ResponseWriter, r *http.Request) {
 	limitStr := r.URL.Query().Get("limit")
 	offsetStr := r.URL.Query().Get("offset")
@@ -108,6 +132,17 @@ func (h *RoleHandler) ListRoles(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, roles)
 }
 
+// GetRoleByID godoc
+// @Summary Get role by id
+// @Description Retrieves a role by id
+// @Tags Roles
+// @Accept json
+// @Produce json
+// @Param id path string true "Role ID"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Router /v1/roles/{id} [get]
 func (h *RoleHandler) GetRoleByID(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idParam)
@@ -123,6 +158,18 @@ func (h *RoleHandler) GetRoleByID(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, role)
 }
 
+// UpdateRole godoc
+// @Summary Update role
+// @Description Updates an existing role
+// @Tags Roles
+// @Accept json
+// @Produce json
+// @Param id path string true "Role ID"
+// @Param request body UpdateeRoleRequest true "Role payload"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/roles/{id} [put]
 func (h *RoleHandler) UpdateRole(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idParam)
@@ -148,6 +195,17 @@ func (h *RoleHandler) UpdateRole(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, role)
 }
 
+// DeleteRole godoc
+// @Summary Delete role
+// @Description Deletes a role by id
+// @Tags Roles
+// @Accept json
+// @Produce json
+// @Param id path string true "Role ID"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/roles/{id} [delete]
 func (h *RoleHandler) DeleteRole(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idParam)
@@ -163,6 +221,19 @@ func (h *RoleHandler) DeleteRole(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, "role deleted")
 }
 
+// AssignRoleToUser godoc
+// @Summary Assign role to user
+// @Description Assigns a role to a user
+// @Tags Roles
+// @Accept json
+// @Produce json
+// @Param request body AssignRoleRequest true "Assign role payload"
+// @Success 201 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 409 {object} response.ErrorResponse
+// @Failure 422 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/roles/assign [post]
 func (h *RoleHandler) AssignRoleToUser(w http.ResponseWriter, r *http.Request) {
 	var req AssignRoleRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -173,9 +244,10 @@ func (h *RoleHandler) AssignRoleToUser(w http.ResponseWriter, r *http.Request) {
 		response.ValidationError(w, err)
 		return
 	}
-	var userID, roleID pgtype.UUID
-	userID.Scan(req.UserID)
-	roleID.Scan(req.RoleID)
+	userID, roleID, ok := scanUserAndRoleIDsOrError(w, req.UserID, req.RoleID)
+	if !ok {
+		return
+	}
 	params := db.AssignRoleToUserParams{
 		UserID: userID,
 		RoleID: roleID,
@@ -192,15 +264,27 @@ func (h *RoleHandler) AssignRoleToUser(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusCreated, userRole)
 }
 
+// RemoveRoleFromUser godoc
+// @Summary Remove role from user
+// @Description Removes a role from a user
+// @Tags Roles
+// @Accept json
+// @Produce json
+// @Param request body RemoveRoleRequest true "Remove role payload"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/roles/remove [delete]
 func (h *RoleHandler) RemoveRoleFromUser(w http.ResponseWriter, r *http.Request) {
 	var req RemoveRoleRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		response.Error(w, http.StatusBadRequest, "invalid json")
 		return
 	}
-	var userID, roleID pgtype.UUID
-	userID.Scan(req.UserID)
-	roleID.Scan(req.RoleID)
+	userID, roleID, ok := scanUserAndRoleIDsOrError(w, req.UserID, req.RoleID)
+	if !ok {
+		return
+	}
 	params := db.RemoveRoleFromUserParams{
 		UserID: userID,
 		RoleID: roleID,
@@ -213,6 +297,17 @@ func (h *RoleHandler) RemoveRoleFromUser(w http.ResponseWriter, r *http.Request)
 	response.JSON(w, http.StatusOK, "role removed")
 }
 
+// GetUserRoles godoc
+// @Summary Get user roles
+// @Description Retrieves all roles assigned to a user
+// @Tags Roles
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/users/{id}/roles [get]
 func (h *RoleHandler) GetUserRoles(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idParam)
@@ -230,4 +325,18 @@ func (h *RoleHandler) GetUserRoles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response.JSON(w, http.StatusOK, roles)
+}
+
+func scanUserAndRoleIDsOrError(w http.ResponseWriter, userIDValue uuid.UUID, roleIDValue uuid.UUID) (pgtype.UUID, pgtype.UUID, bool) {
+	userID, ok := scanUUIDOrError(w, userIDValue, "invalid user id")
+	if !ok {
+		return pgtype.UUID{}, pgtype.UUID{}, false
+	}
+
+	roleID, ok := scanUUIDOrError(w, roleIDValue, "invalid role id")
+	if !ok {
+		return pgtype.UUID{}, pgtype.UUID{}, false
+	}
+
+	return userID, roleID, true
 }
