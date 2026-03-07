@@ -2,7 +2,8 @@
 INSERT INTO roles (
     name, description
 ) VALUES (
-    $1,$2
+ $1,$2
+)
 RETURNING *;
 
 -- name: GetRoleByID :one

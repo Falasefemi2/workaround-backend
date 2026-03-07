@@ -34,7 +34,7 @@ const createRole = `-- name: CreateRole :one
 INSERT INTO roles (
     name, description
 ) VALUES (
-    $1,$2
+ $1,$2
 )
 RETURNING id, name, description
 `
