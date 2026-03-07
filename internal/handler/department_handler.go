@@ -37,6 +37,10 @@ type UpdateDepartmentRequest struct {
 	Code string `json:"code"`
 }
 
+type AssignHodRequest struct {
+	HodID string `json:"hod_id" validate:"required"`
+}
+
 func (h *DeptHandler) RegisterRoutes(
 	r chi.Router,
 	auth func(http.Handler) http.Handler,
@@ -55,6 +59,19 @@ func (h *DeptHandler) RegisterRoutes(
 	})
 }
 
+// CreateDepartment godoc
+// @Summary Create a new department
+// @Description Creates a new department in the system
+// @Tags Departments
+// @Accept json
+// @Produce json
+// @Param request body CreateDeptRequest true "Department payload"
+// @Success 201 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 409 {object} response.ErrorResponse
+// @Failure 422 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/departments [post]
 func (h *DeptHandler) CreateDepartment(w http.ResponseWriter, r *http.Request) {
 	var req CreateDeptRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -65,10 +82,11 @@ func (h *DeptHandler) CreateDepartment(w http.ResponseWriter, r *http.Request) {
 		response.ValidationError(w, errs)
 		return
 	}
-	var hodID pgtype.UUID
+	hodID := pgtype.UUID{}
 	if req.HodID != "" {
-		if err := hodID.Scan(req.HodID); err != nil {
-			response.Error(w, http.StatusBadRequest, "invalid hod_id format")
+		var ok bool
+		hodID, ok = scanUUIDOrError(w, req.HodID, "invalid hod_id format")
+		if !ok {
 			return
 		}
 	}
@@ -93,6 +111,18 @@ func (h *DeptHandler) CreateDepartment(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusCreated, dept)
 }
 
+// DeleteDepartment godoc
+// @Summary Delete department
+// @Description Deletes a department by id
+// @Tags Departments
+// @Accept json
+// @Produce json
+// @Param id path string true "Department ID"
+// @Success 204 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/departments/{id} [delete]
 func (h *DeptHandler) DeleteDepartment(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 	if idParam == "" {
@@ -118,6 +148,18 @@ func (h *DeptHandler) DeleteDepartment(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// GetDepartmentByID godoc
+// @Summary Get department by id
+// @Description Retrieves a department by id
+// @Tags Departments
+// @Accept json
+// @Produce json
+// @Param id path string true "Department ID"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/departments/{id} [get]
 func (h *DeptHandler) GetDepartmentByID(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 	if idParam == "" {
@@ -144,6 +186,18 @@ func (h *DeptHandler) GetDepartmentByID(w http.ResponseWriter, r *http.Request) 
 	response.JSON(w, http.StatusOK, dept)
 }
 
+// ListDepartments godoc
+// @Summary List departments
+// @Description Returns a paginated list of departments
+// @Tags Departments
+// @Accept json
+// @Produce json
+// @Param limit query int false "Page size"
+// @Param offset query int false "Page offset"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/departments [get]
 func (h *DeptHandler) ListDepartments(w http.ResponseWriter, r *http.Request) {
 	limitStr := r.URL.Query().Get("limit")
 	offsetStr := r.URL.Query().Get("offset")
@@ -181,6 +235,18 @@ func (h *DeptHandler) ListDepartments(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, depts)
 }
 
+// UpdateDepartment godoc
+// @Summary Update department
+// @Description Updates an existing department
+// @Tags Departments
+// @Accept json
+// @Produce json
+// @Param id path string true "Department ID"
+// @Param request body UpdateDepartmentRequest true "Department payload"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/departments/{id} [put]
 func (h *DeptHandler) UpdateDepartment(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 	if idParam == "" {
@@ -213,6 +279,20 @@ func (h *DeptHandler) UpdateDepartment(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, dept)
 }
 
+// AssignHodToDepartment godoc
+// @Summary Assign HOD to department
+// @Description Assigns a head of department to a department
+// @Tags Departments
+// @Accept json
+// @Produce json
+// @Param id path string true "Department ID"
+// @Param request body AssignHodRequest true "HOD payload"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 422 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/departments/{id}/hod [put]
 func (h *DeptHandler) AssignHodToDepartment(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 	if idParam == "" {
@@ -226,11 +306,7 @@ func (h *DeptHandler) AssignHodToDepartment(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	type assignRequest struct {
-		HodID string `json:"hod_id" validate:"required"`
-	}
-
-	var req assignRequest
+	var req AssignHodRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		response.Error(w, http.StatusBadRequest, "invalid request body")
 		return
@@ -241,9 +317,8 @@ func (h *DeptHandler) AssignHodToDepartment(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	var hodID pgtype.UUID
-	if err := hodID.Scan(req.HodID); err != nil {
-		response.Error(w, http.StatusBadRequest, "invalid hod_id format")
+	hodID, ok := scanUUIDOrError(w, req.HodID, "invalid hod_id format")
+	if !ok {
 		return
 	}
 

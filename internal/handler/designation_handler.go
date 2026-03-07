@@ -53,6 +53,19 @@ func (h *DesignationHandler) RegisterRoutes(
 	})
 }
 
+// CreateDesignation godoc
+// @Summary Create a new designation
+// @Description Creates a new designation in the system
+// @Tags Designations
+// @Accept json
+// @Produce json
+// @Param request body CreateDesignationRequest true "Designation payload"
+// @Success 201 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 409 {object} response.ErrorResponse
+// @Failure 422 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/designations [post]
 func (h *DesignationHandler) CreateDesignation(w http.ResponseWriter, r *http.Request) {
 	var req CreateDesignationRequest
 
@@ -91,6 +104,18 @@ func (h *DesignationHandler) CreateDesignation(w http.ResponseWriter, r *http.Re
 	response.JSON(w, http.StatusCreated, designation)
 }
 
+// DeleteDesignation godoc
+// @Summary Delete designation
+// @Description Deletes a designation by id
+// @Tags Designations
+// @Accept json
+// @Produce json
+// @Param id path string true "Designation ID"
+// @Success 204 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/designations/{id} [delete]
 func (h *DesignationHandler) DeleteDesignation(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 
@@ -115,6 +140,18 @@ func (h *DesignationHandler) DeleteDesignation(w http.ResponseWriter, r *http.Re
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// GetDesignationByID godoc
+// @Summary Get designation by id
+// @Description Retrieves a designation by id
+// @Tags Designations
+// @Accept json
+// @Produce json
+// @Param id path string true "Designation ID"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/designations/{id} [get]
 func (h *DesignationHandler) GetDesignationByID(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 
@@ -139,6 +176,18 @@ func (h *DesignationHandler) GetDesignationByID(w http.ResponseWriter, r *http.R
 	response.JSON(w, http.StatusOK, designation)
 }
 
+// ListDesignations godoc
+// @Summary List designations
+// @Description Returns a paginated list of designations
+// @Tags Designations
+// @Accept json
+// @Produce json
+// @Param limit query int false "Page size"
+// @Param offset query int false "Page offset"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/designations [get]
 func (h *DesignationHandler) ListDesignations(w http.ResponseWriter, r *http.Request) {
 	limitStr := r.URL.Query().Get("limit")
 	offsetStr := r.URL.Query().Get("offset")
@@ -183,6 +232,18 @@ func (h *DesignationHandler) ListDesignations(w http.ResponseWriter, r *http.Req
 	response.JSON(w, http.StatusOK, designations)
 }
 
+// UpdateDesignation godoc
+// @Summary Update designation
+// @Description Updates an existing designation
+// @Tags Designations
+// @Accept json
+// @Produce json
+// @Param id path string true "Designation ID"
+// @Param request body UpdateDesignationRequest true "Designation payload"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/designations/{id} [put]
 func (h *DesignationHandler) UpdateDesignation(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 

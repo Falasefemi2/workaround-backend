@@ -14,6 +14,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 	"github.com/jackc/pgx/v5/pgxpool"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 func New(pool *pgxpool.Pool, cfg *config.Config) http.Handler {
@@ -83,6 +84,9 @@ func New(pool *pgxpool.Pool, cfg *config.Config) http.Handler {
 			return
 		}
 	})
+	r.Get("/swagger/*", httpSwagger.Handler(
+		httpSwagger.URL("/swagger/doc.json"),
+	))
 
 	return r
 }

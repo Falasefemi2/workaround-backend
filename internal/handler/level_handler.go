@@ -3,7 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -75,6 +74,19 @@ func (h *LevelHandler) RegisterRoutes(
 	})
 }
 
+// CreateLevel godoc
+// @Summary Create a new level
+// @Description Creates a new level in the system
+// @Tags Levels
+// @Accept json
+// @Produce json
+// @Param request body CreateLevelRequest true "Level payload"
+// @Success 201 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 422 {object} response.ErrorResponse
+// @Failure 409 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/levels [post]
 func (h *LevelHandler) CreateLevel(w http.ResponseWriter, r *http.Request) {
 	var req CreateLevelRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -86,10 +98,33 @@ func (h *LevelHandler) CreateLevel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	toNumeric := func(f float64) pgtype.Numeric {
-		var n pgtype.Numeric
-		n.Scan(fmt.Sprintf("%f", f))
-		return n
+	annualGross, ok := scanNumericOrError(w, req.AnnualGross, "invalid annual_gross")
+	if !ok {
+		return
+	}
+	basicSalary, ok := scanNumericOrError(w, req.BasicSalary, "invalid basic_salary")
+	if !ok {
+		return
+	}
+	transportAllowance, ok := scanNumericOrError(w, req.TransportAllowance, "invalid transport_allowance")
+	if !ok {
+		return
+	}
+	domesticAllowance, ok := scanNumericOrError(w, req.DomesticAllowance, "invalid domestic_allowance")
+	if !ok {
+		return
+	}
+	utilityAllowance, ok := scanNumericOrError(w, req.UtilityAllowance, "invalid utility_allowance")
+	if !ok {
+		return
+	}
+	lunchSubsidy, ok := scanNumericOrError(w, req.LunchSubsidy, "invalid lunch_subsidy")
+	if !ok {
+		return
+	}
+	supportTotal, ok := scanNumericOrError(w, req.SupportTotal, "invalid support_total")
+	if !ok {
+		return
 	}
 
 	level, err := h.service.CreateLevel(r.Context(), db.CreateLevelParams{
@@ -99,13 +134,13 @@ func (h *LevelHandler) CreateLevel(w http.ResponseWriter, r *http.Request) {
 		MinimumLeaveDays:        req.MinimumLeaveDays,
 		TotalAnnualLeaveDays:    req.TotalAnnualLeaveDays,
 		LeaveExpirationInterval: req.LeaveExpirationInterval,
-		AnnualGross:             toNumeric(req.AnnualGross),
-		BasicSalary:             toNumeric(req.BasicSalary),
-		TransportAllowance:      toNumeric(req.TransportAllowance),
-		DomesticAllowance:       toNumeric(req.DomesticAllowance),
-		UtilityAllowance:        toNumeric(req.UtilityAllowance),
-		LunchSubsidy:            toNumeric(req.LunchSubsidy),
-		SupportTotal:            toNumeric(req.SupportTotal),
+		AnnualGross:             annualGross,
+		BasicSalary:             basicSalary,
+		TransportAllowance:      transportAllowance,
+		DomesticAllowance:       domesticAllowance,
+		UtilityAllowance:        utilityAllowance,
+		LunchSubsidy:            lunchSubsidy,
+		SupportTotal:            supportTotal,
 	})
 	if err != nil {
 		if errors.Is(err, service.ErrLevelCodeTaken) {
@@ -119,6 +154,18 @@ func (h *LevelHandler) CreateLevel(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusCreated, level)
 }
 
+// GetLevelByID godoc
+// @Summary Get level by id
+// @Description Retrieves a level by its id
+// @Tags Levels
+// @Accept json
+// @Produce json
+// @Param id path string true "Level ID"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/levels/{id} [get]
 func (h *LevelHandler) GetLevelByID(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
@@ -135,6 +182,17 @@ func (h *LevelHandler) GetLevelByID(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, level)
 }
 
+// ListLevels godoc
+// @Summary List levels
+// @Description Returns a paginated list of levels
+// @Tags Levels
+// @Accept json
+// @Produce json
+// @Param limit query int false "Page size"
+// @Param offset query int false "Page offset"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/levels [get]
 func (h *LevelHandler) ListLevels(w http.ResponseWriter, r *http.Request) {
 	limit, offset := parsePagination(r)
 
@@ -150,6 +208,19 @@ func (h *LevelHandler) ListLevels(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, levels)
 }
 
+// SearchLevels godoc
+// @Summary Search levels
+// @Description Searches levels by query string
+// @Tags Levels
+// @Accept json
+// @Produce json
+// @Param q query string true "Search query"
+// @Param limit query int false "Page size"
+// @Param offset query int false "Page offset"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/levels/search [get]
 func (h *LevelHandler) SearchLevels(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("q")
 	if query == "" {
@@ -172,6 +243,18 @@ func (h *LevelHandler) SearchLevels(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, levels)
 }
 
+// UpdateLevel godoc
+// @Summary Update level
+// @Description Updates an existing level
+// @Tags Levels
+// @Accept json
+// @Produce json
+// @Param id path string true "Level ID"
+// @Param request body UpdateLevelRequest true "Level payload"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/levels/{id} [put]
 func (h *LevelHandler) UpdateLevel(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
@@ -185,10 +268,33 @@ func (h *LevelHandler) UpdateLevel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	toNumeric := func(f float64) pgtype.Numeric {
-		var n pgtype.Numeric
-		n.Scan(fmt.Sprintf("%f", f))
-		return n
+	annualGross, ok := scanNumericOrError(w, req.AnnualGross, "invalid annual_gross")
+	if !ok {
+		return
+	}
+	basicSalary, ok := scanNumericOrError(w, req.BasicSalary, "invalid basic_salary")
+	if !ok {
+		return
+	}
+	transportAllowance, ok := scanNumericOrError(w, req.TransportAllowance, "invalid transport_allowance")
+	if !ok {
+		return
+	}
+	domesticAllowance, ok := scanNumericOrError(w, req.DomesticAllowance, "invalid domestic_allowance")
+	if !ok {
+		return
+	}
+	utilityAllowance, ok := scanNumericOrError(w, req.UtilityAllowance, "invalid utility_allowance")
+	if !ok {
+		return
+	}
+	lunchSubsidy, ok := scanNumericOrError(w, req.LunchSubsidy, "invalid lunch_subsidy")
+	if !ok {
+		return
+	}
+	supportTotal, ok := scanNumericOrError(w, req.SupportTotal, "invalid support_total")
+	if !ok {
+		return
 	}
 
 	level, err := h.service.UpdateLevel(r.Context(), db.UpdateLevelParams{
@@ -199,13 +305,13 @@ func (h *LevelHandler) UpdateLevel(w http.ResponseWriter, r *http.Request) {
 		MinimumLeaveDays:        req.MinimumLeaveDays,
 		TotalAnnualLeaveDays:    req.TotalAnnualLeaveDays,
 		LeaveExpirationInterval: req.LeaveExpirationInterval,
-		AnnualGross:             toNumeric(req.AnnualGross),
-		BasicSalary:             toNumeric(req.BasicSalary),
-		TransportAllowance:      toNumeric(req.TransportAllowance),
-		DomesticAllowance:       toNumeric(req.DomesticAllowance),
-		UtilityAllowance:        toNumeric(req.UtilityAllowance),
-		LunchSubsidy:            toNumeric(req.LunchSubsidy),
-		SupportTotal:            toNumeric(req.SupportTotal),
+		AnnualGross:             annualGross,
+		BasicSalary:             basicSalary,
+		TransportAllowance:      transportAllowance,
+		DomesticAllowance:       domesticAllowance,
+		UtilityAllowance:        utilityAllowance,
+		LunchSubsidy:            lunchSubsidy,
+		SupportTotal:            supportTotal,
 	})
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, "could not update level")
@@ -215,6 +321,17 @@ func (h *LevelHandler) UpdateLevel(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, level)
 }
 
+// DeleteLevel godoc
+// @Summary Delete level
+// @Description Deletes a level by id
+// @Tags Levels
+// @Accept json
+// @Produce json
+// @Param id path string true "Level ID"
+// @Success 204 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/levels/{id} [delete]
 func (h *LevelHandler) DeleteLevel(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
