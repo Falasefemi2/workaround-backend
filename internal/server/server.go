@@ -42,6 +42,8 @@ func New(pool *pgxpool.Pool, cfg *config.Config) http.Handler {
 	levelRepo := repository.NewLevelRepo(queries)
 	roleRepo := repository.NewRoleRepo(queries)
 	approvalRepo := repository.NewApprovalRepo(queries)
+	candidateOfferRepo := repository.NewCandidateOfferRepo(queries)
+	employeeRepo := repository.NewEmployeeRepo(queries)
 
 	userService := service.NewUserService(
 		userRepo,
@@ -60,6 +62,17 @@ func New(pool *pgxpool.Pool, cfg *config.Config) http.Handler {
 	levelService := service.NewLevelService(levelRepo)
 	roleService := service.NewRoleService(roleRepo, userRepo)
 	approvalService := service.NewApprovalService(approvalRepo, roleRepo)
+	candidateOfferService := service.NewCandidateOfferService(
+		candidateOfferRepo,
+		employeeRepo,
+		userRepo,
+		email.SMTPConfig{
+			Host:     cfg.Email.Host,
+			Port:     cfg.Email.Port,
+			Username: cfg.Email.Username,
+			Password: cfg.Email.Password,
+		},
+	)
 
 	userHandler := handler.NewUserHandler(userService)
 	deptHandler := handler.NewDeptHandler(deptService)
@@ -68,6 +81,7 @@ func New(pool *pgxpool.Pool, cfg *config.Config) http.Handler {
 	levelHandler := handler.NewLevelHandler(levelService)
 	roleHandler := handler.NewRoleHandler(roleService)
 	approvalHandler := handler.NewApprovalHandler(approvalService)
+	candidateOfferHandler := handler.NewCandidateOfferHandler(candidateOfferService)
 
 	authMiddleware := appmw.RequireAuth(cfg.Primary.JWTSecret)
 	adminOrHR := appmw.RequireRoles("admin", "hr")
@@ -80,6 +94,7 @@ func New(pool *pgxpool.Pool, cfg *config.Config) http.Handler {
 	levelHandler.RegisterRoutes(r, authMiddleware, adminOrHR)
 	roleHandler.RegisterRoutes(r, authMiddleware, adminOrHR)
 	approvalHandler.RegisterRoutes(r, authMiddleware, adminOrHR)
+	candidateOfferHandler.RegisterRoutes(r, authMiddleware, adminOrHR)
 
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		_, err := w.Write([]byte("ok"))
