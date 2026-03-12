@@ -27,10 +27,10 @@ func NewApprovalHandler(service *service.ApprovalService) *ApprovalHandler {
 }
 
 type CreateApprovalSetupRequest struct {
-	ModuleType   string `json:"module_type"  validate:"required"`
+	ModuleType   string `json:"module_type"   validate:"required"`
 	DepartmentID string `json:"department_id"`
-	LevelOrder   int32  `json:"level_order"  validate:"required"`
-	RoleID       string `json:"role_id"      validate:"required"`
+	LevelOrder   int32  `json:"level_order"   validate:"required"`
+	RoleID       string `json:"role_id"       validate:"required"`
 }
 
 type SubmitForApprovalRequest struct {
@@ -66,6 +66,18 @@ func (h *ApprovalHandler) RegisterRoutes(
 	})
 }
 
+// CreateApprovalSetup godoc
+// @Summary Create approval setup
+// @Description Creates an approval chain level for a module and department
+// @Tags Approvals
+// @Accept json
+// @Produce json
+// @Param request body CreateApprovalSetupRequest true "Approval setup payload"
+// @Success 201 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 422 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/approvals/setup [post]
 func (h *ApprovalHandler) CreateApprovalSetup(w http.ResponseWriter, r *http.Request) {
 	var req CreateApprovalSetupRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -101,6 +113,17 @@ func (h *ApprovalHandler) CreateApprovalSetup(w http.ResponseWriter, r *http.Req
 	response.JSON(w, http.StatusCreated, setup)
 }
 
+// GetApprovalChain godoc
+// @Summary Get approval chain
+// @Description Retrieves approval chain by module type
+// @Tags Approvals
+// @Accept json
+// @Produce json
+// @Param module_type query string true "Module type"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/approvals/setup [get]
 func (h *ApprovalHandler) GetApprovalChain(w http.ResponseWriter, r *http.Request) {
 	moduleType := r.URL.Query().Get("module_type")
 	if moduleType == "" {
@@ -108,7 +131,10 @@ func (h *ApprovalHandler) GetApprovalChain(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	chain, err := h.service.GetApprovalChain(r.Context(), pgtype.Text{String: moduleType, Valid: true})
+	chain, err := h.service.GetApprovalChain(
+		r.Context(),
+		pgtype.Text{String: moduleType, Valid: true},
+	)
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, "failed to get approval chain")
 		return
@@ -117,6 +143,17 @@ func (h *ApprovalHandler) GetApprovalChain(w http.ResponseWriter, r *http.Reques
 	response.JSON(w, http.StatusOK, chain)
 }
 
+// DeleteApprovalSetup godoc
+// @Summary Delete approval setup
+// @Description Deletes an approval setup level by id
+// @Tags Approvals
+// @Accept json
+// @Produce json
+// @Param id path string true "Approval setup ID"
+// @Success 204 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/approvals/setup/{id} [delete]
 func (h *ApprovalHandler) DeleteApprovalSetup(w http.ResponseWriter, r *http.Request) {
 	setupID, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
@@ -132,6 +169,18 @@ func (h *ApprovalHandler) DeleteApprovalSetup(w http.ResponseWriter, r *http.Req
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// SubmitForApproval godoc
+// @Summary Submit for approval
+// @Description Submits a module record for approval
+// @Tags Approvals
+// @Accept json
+// @Produce json
+// @Param request body SubmitForApprovalRequest true "Submit for approval payload"
+// @Success 201 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 422 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/approvals/submit [post]
 func (h *ApprovalHandler) SubmitForApproval(w http.ResponseWriter, r *http.Request) {
 	var req SubmitForApprovalRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -157,6 +206,17 @@ func (h *ApprovalHandler) SubmitForApproval(w http.ResponseWriter, r *http.Reque
 	response.JSON(w, http.StatusCreated, approval)
 }
 
+// GetPendingApprovals godoc
+// @Summary Get pending approvals
+// @Description Returns pending approvals for the authenticated approver
+// @Tags Approvals
+// @Accept json
+// @Produce json
+// @Success 200 {object} response.SuccessResponse
+// @Failure 401 {object} response.ErrorResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/approvals/pending [get]
 func (h *ApprovalHandler) GetPendingApprovals(w http.ResponseWriter, r *http.Request) {
 	userIDStr, ok := r.Context().Value(middleware.UserIDKey).(string)
 	if !ok || userIDStr == "" {
@@ -170,7 +230,10 @@ func (h *ApprovalHandler) GetPendingApprovals(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	pending, err := h.service.GetPendingApprovals(r.Context(), pgtype.UUID{Bytes: userID, Valid: true})
+	pending, err := h.service.GetPendingApprovals(
+		r.Context(),
+		pgtype.UUID{Bytes: userID, Valid: true},
+	)
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, "failed to get pending approvals")
 		return
@@ -179,6 +242,17 @@ func (h *ApprovalHandler) GetPendingApprovals(w http.ResponseWriter, r *http.Req
 	response.JSON(w, http.StatusOK, pending)
 }
 
+// GetApprovalsByReference godoc
+// @Summary Get approvals by reference
+// @Description Retrieves approvals for a module reference
+// @Tags Approvals
+// @Accept json
+// @Produce json
+// @Param reference_id path string true "Reference ID"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/approvals/reference/{reference_id} [get]
 func (h *ApprovalHandler) GetApprovalsByReference(w http.ResponseWriter, r *http.Request) {
 	referenceID, err := uuid.Parse(chi.URLParam(r, "reference_id"))
 	if err != nil {
@@ -195,6 +269,21 @@ func (h *ApprovalHandler) GetApprovalsByReference(w http.ResponseWriter, r *http
 	response.JSON(w, http.StatusOK, approvals)
 }
 
+// ActOnApproval godoc
+// @Summary Act on approval
+// @Description Approves or rejects an approval request
+// @Tags Approvals
+// @Accept json
+// @Produce json
+// @Param reference_id path string true "Reference ID"
+// @Param request body ActOnApprovalRequest true "Approval action payload"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 401 {object} response.ErrorResponse
+// @Failure 403 {object} response.ErrorResponse
+// @Failure 422 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/approvals/reference/{reference_id}/act [post]
 func (h *ApprovalHandler) ActOnApproval(w http.ResponseWriter, r *http.Request) {
 	referenceID, err := uuid.Parse(chi.URLParam(r, "reference_id"))
 	if err != nil {

@@ -15,6 +15,352 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/v1/approvals/pending": {
+            "get": {
+                "description": "Returns pending approvals for the authenticated approver",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Approvals"
+                ],
+                "summary": "Get pending approvals",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/approvals/reference/{reference_id}": {
+            "get": {
+                "description": "Retrieves approvals for a module reference",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Approvals"
+                ],
+                "summary": "Get approvals by reference",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Reference ID",
+                        "name": "reference_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/approvals/reference/{reference_id}/act": {
+            "post": {
+                "description": "Approves or rejects an approval request",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Approvals"
+                ],
+                "summary": "Act on approval",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Reference ID",
+                        "name": "reference_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Approval action payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ActOnApprovalRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/approvals/setup": {
+            "get": {
+                "description": "Retrieves approval chain by module type",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Approvals"
+                ],
+                "summary": "Get approval chain",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Module type",
+                        "name": "module_type",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates an approval chain level for a module and department",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Approvals"
+                ],
+                "summary": "Create approval setup",
+                "parameters": [
+                    {
+                        "description": "Approval setup payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.CreateApprovalSetupRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/approvals/setup/{id}": {
+            "delete": {
+                "description": "Deletes an approval setup level by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Approvals"
+                ],
+                "summary": "Delete approval setup",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Approval setup ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/approvals/submit": {
+            "post": {
+                "description": "Submits a module record for approval",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Approvals"
+                ],
+                "summary": "Submit for approval",
+                "parameters": [
+                    {
+                        "description": "Submit for approval payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.SubmitForApprovalRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/auth/forgot-password": {
             "post": {
                 "description": "Sends password reset instructions if email exists",
@@ -251,6 +597,298 @@ const docTemplate = `{
                     },
                     "422": {
                         "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/candidates": {
+            "get": {
+                "description": "Returns a paginated list of candidates",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Candidates"
+                ],
+                "summary": "List candidates",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page size",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page offset",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates a new candidate",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Candidates"
+                ],
+                "summary": "Create candidate",
+                "parameters": [
+                    {
+                        "description": "Candidate payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.CreateCandidateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/candidates/{id}": {
+            "get": {
+                "description": "Retrieves a candidate by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Candidates"
+                ],
+                "summary": "Get candidate by id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Candidate ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Updates a candidate by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Candidates"
+                ],
+                "summary": "Update candidate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Candidate ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Candidate payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.UpdateCandidateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes a candidate by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Candidates"
+                ],
+                "summary": "Delete candidate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Candidate ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/candidates/{id}/offers": {
+            "get": {
+                "description": "Retrieves offers for a candidate",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Offers"
+                ],
+                "summary": "Get offers by candidate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Candidate ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
                         }
@@ -1116,6 +1754,187 @@ const docTemplate = `{
                 "responses": {
                     "204": {
                         "description": "No Content",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/offers": {
+            "get": {
+                "description": "Returns a paginated list of offers",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Offers"
+                ],
+                "summary": "List offers",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page size",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page offset",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates a new candidate offer",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Offers"
+                ],
+                "summary": "Create offer",
+                "parameters": [
+                    {
+                        "description": "Offer payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.CreateOfferRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/offers/{id}/accept": {
+            "put": {
+                "description": "Accepts a candidate offer by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Offers"
+                ],
+                "summary": "Accept offer",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Offer ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/offers/{id}/reject": {
+            "put": {
+                "description": "Rejects a candidate offer by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Offers"
+                ],
+                "summary": "Reject offer",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Offer ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse"
                         }
@@ -2143,6 +2962,24 @@ const docTemplate = `{
                 "data": {}
             }
         },
+        "internal_handler.ActOnApprovalRequest": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "comment": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "approved",
+                        "rejected"
+                    ]
+                }
+            }
+        },
         "internal_handler.AssignHodRequest": {
             "type": "object",
             "required": [
@@ -2193,6 +3030,50 @@ const docTemplate = `{
                 "password": {
                     "type": "string",
                     "minLength": 8
+                }
+            }
+        },
+        "internal_handler.CreateApprovalSetupRequest": {
+            "type": "object",
+            "required": [
+                "level_order",
+                "module_type",
+                "role_id"
+            ],
+            "properties": {
+                "department_id": {
+                    "type": "string"
+                },
+                "level_order": {
+                    "type": "integer"
+                },
+                "module_type": {
+                    "type": "string"
+                },
+                "role_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler.CreateCandidateRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "first_name",
+                "last_name"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
                 }
             }
         },
@@ -2285,6 +3166,43 @@ const docTemplate = `{
                 },
                 "utility_allowance": {
                     "type": "number"
+                }
+            }
+        },
+        "internal_handler.CreateOfferRequest": {
+            "type": "object",
+            "required": [
+                "candidate_id",
+                "created_by",
+                "department_id",
+                "designation_id",
+                "level_id",
+                "proposed_start_date"
+            ],
+            "properties": {
+                "candidate_id": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "department_id": {
+                    "type": "string"
+                },
+                "designation_id": {
+                    "type": "string"
+                },
+                "level_id": {
+                    "type": "string"
+                },
+                "new_start_date": {
+                    "type": "string"
+                },
+                "offer_letter_url": {
+                    "type": "string"
+                },
+                "proposed_start_date": {
+                    "type": "string"
                 }
             }
         },
@@ -2387,6 +3305,43 @@ const docTemplate = `{
                     "minLength": 8
                 },
                 "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler.SubmitForApprovalRequest": {
+            "type": "object",
+            "required": [
+                "department_id",
+                "module_type",
+                "reference_id"
+            ],
+            "properties": {
+                "department_id": {
+                    "type": "string"
+                },
+                "module_type": {
+                    "type": "string"
+                },
+                "reference_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler.UpdateCandidateRequest": {
+            "type": "object",
+            "required": [
+                "first_name",
+                "last_name"
+            ],
+            "properties": {
+                "first_name": {
+                    "type": "string"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "phone": {
                     "type": "string"
                 }
             }

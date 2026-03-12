@@ -73,6 +73,19 @@ type CreateOfferRequest struct {
 	CreatedBy         string `json:"created_by"          validate:"required"`
 }
 
+// CreateCandidate godoc
+// @Summary Create candidate
+// @Description Creates a new candidate
+// @Tags Candidates
+// @Accept json
+// @Produce json
+// @Param request body CreateCandidateRequest true "Candidate payload"
+// @Success 201 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 409 {object} response.ErrorResponse
+// @Failure 422 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/candidates [post]
 func (h *CandidateOfferHandler) CreateCandidate(w http.ResponseWriter, r *http.Request) {
 	var req CreateCandidateRequest
 
@@ -106,6 +119,18 @@ func (h *CandidateOfferHandler) CreateCandidate(w http.ResponseWriter, r *http.R
 	response.JSON(w, http.StatusCreated, candidate)
 }
 
+// ListCandidates godoc
+// @Summary List candidates
+// @Description Returns a paginated list of candidates
+// @Tags Candidates
+// @Accept json
+// @Produce json
+// @Param limit query int false "Page size"
+// @Param offset query int false "Page offset"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/candidates [get]
 func (h *CandidateOfferHandler) ListCandidates(w http.ResponseWriter, r *http.Request) {
 	limit := int32(10)
 	offset := int32(0)
@@ -140,6 +165,17 @@ func (h *CandidateOfferHandler) ListCandidates(w http.ResponseWriter, r *http.Re
 	response.JSON(w, http.StatusOK, candidates)
 }
 
+// GetCandidateByID godoc
+// @Summary Get candidate by id
+// @Description Retrieves a candidate by id
+// @Tags Candidates
+// @Accept json
+// @Produce json
+// @Param id path string true "Candidate ID"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/candidates/{id} [get]
 func (h *CandidateOfferHandler) GetCandidateByID(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 
@@ -158,6 +194,19 @@ func (h *CandidateOfferHandler) GetCandidateByID(w http.ResponseWriter, r *http.
 	response.JSON(w, http.StatusOK, candidate)
 }
 
+// UpdateCandidate godoc
+// @Summary Update candidate
+// @Description Updates a candidate by id
+// @Tags Candidates
+// @Accept json
+// @Produce json
+// @Param id path string true "Candidate ID"
+// @Param request body UpdateCandidateRequest true "Candidate payload"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 422 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/candidates/{id} [put]
 func (h *CandidateOfferHandler) UpdateCandidate(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 
@@ -193,6 +242,17 @@ func (h *CandidateOfferHandler) UpdateCandidate(w http.ResponseWriter, r *http.R
 	response.JSON(w, http.StatusOK, candidate)
 }
 
+// DeleteCandidate godoc
+// @Summary Delete candidate
+// @Description Deletes a candidate by id
+// @Tags Candidates
+// @Accept json
+// @Produce json
+// @Param id path string true "Candidate ID"
+// @Success 204 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/candidates/{id} [delete]
 func (h *CandidateOfferHandler) DeleteCandidate(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 
@@ -211,6 +271,18 @@ func (h *CandidateOfferHandler) DeleteCandidate(w http.ResponseWriter, r *http.R
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// CreateOffer godoc
+// @Summary Create offer
+// @Description Creates a new candidate offer
+// @Tags Offers
+// @Accept json
+// @Produce json
+// @Param request body CreateOfferRequest true "Offer payload"
+// @Success 201 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 422 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/offers [post]
 func (h *CandidateOfferHandler) CreateOffer(w http.ResponseWriter, r *http.Request) {
 	var req CreateOfferRequest
 
@@ -265,6 +337,17 @@ func (h *CandidateOfferHandler) CreateOffer(w http.ResponseWriter, r *http.Reque
 	response.JSON(w, http.StatusCreated, offer)
 }
 
+// AcceptOffer godoc
+// @Summary Accept offer
+// @Description Accepts a candidate offer by id
+// @Tags Offers
+// @Accept json
+// @Produce json
+// @Param id path string true "Offer ID"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/offers/{id}/accept [put]
 func (h *CandidateOfferHandler) AcceptOffer(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 
@@ -284,6 +367,17 @@ func (h *CandidateOfferHandler) AcceptOffer(w http.ResponseWriter, r *http.Reque
 	})
 }
 
+// RejectOffer godoc
+// @Summary Reject offer
+// @Description Rejects a candidate offer by id
+// @Tags Offers
+// @Accept json
+// @Produce json
+// @Param id path string true "Offer ID"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/offers/{id}/reject [put]
 func (h *CandidateOfferHandler) RejectOffer(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 
@@ -304,6 +398,17 @@ func (h *CandidateOfferHandler) RejectOffer(w http.ResponseWriter, r *http.Reque
 	})
 }
 
+// GetOffersByCandidate godoc
+// @Summary Get offers by candidate
+// @Description Retrieves offers for a candidate
+// @Tags Offers
+// @Accept json
+// @Produce json
+// @Param id path string true "Candidate ID"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/candidates/{id}/offers [get]
 func (h *CandidateOfferHandler) GetOffersByCandidate(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 
@@ -322,6 +427,17 @@ func (h *CandidateOfferHandler) GetOffersByCandidate(w http.ResponseWriter, r *h
 	response.JSON(w, http.StatusOK, offers)
 }
 
+// ListOffers godoc
+// @Summary List offers
+// @Description Returns a paginated list of offers
+// @Tags Offers
+// @Accept json
+// @Produce json
+// @Param limit query int false "Page size"
+// @Param offset query int false "Page offset"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /v1/offers [get]
 func (h *CandidateOfferHandler) ListOffers(w http.ResponseWriter, r *http.Request) {
 	limit, offset := parsePagination(r)
 

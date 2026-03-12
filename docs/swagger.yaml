@@ -21,6 +21,18 @@ definitions:
     properties:
       data: {}
     type: object
+  internal_handler.ActOnApprovalRequest:
+    properties:
+      comment:
+        type: string
+      status:
+        enum:
+        - approved
+        - rejected
+        type: string
+    required:
+    - status
+    type: object
   internal_handler.AssignHodRequest:
     properties:
       hod_id:
@@ -55,6 +67,36 @@ definitions:
     required:
     - email
     - password
+    type: object
+  internal_handler.CreateApprovalSetupRequest:
+    properties:
+      department_id:
+        type: string
+      level_order:
+        type: integer
+      module_type:
+        type: string
+      role_id:
+        type: string
+    required:
+    - level_order
+    - module_type
+    - role_id
+    type: object
+  internal_handler.CreateCandidateRequest:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      phone:
+        type: string
+    required:
+    - email
+    - first_name
+    - last_name
     type: object
   internal_handler.CreateDeptRequest:
     properties:
@@ -120,6 +162,32 @@ definitions:
     - total_annual_leave_days
     - transport_allowance
     - utility_allowance
+    type: object
+  internal_handler.CreateOfferRequest:
+    properties:
+      candidate_id:
+        type: string
+      created_by:
+        type: string
+      department_id:
+        type: string
+      designation_id:
+        type: string
+      level_id:
+        type: string
+      new_start_date:
+        type: string
+      offer_letter_url:
+        type: string
+      proposed_start_date:
+        type: string
+    required:
+    - candidate_id
+    - created_by
+    - department_id
+    - designation_id
+    - level_id
+    - proposed_start_date
     type: object
   internal_handler.CreateRoleRequest:
     properties:
@@ -191,6 +259,31 @@ definitions:
     - new_password
     - token
     type: object
+  internal_handler.SubmitForApprovalRequest:
+    properties:
+      department_id:
+        type: string
+      module_type:
+        type: string
+      reference_id:
+        type: string
+    required:
+    - department_id
+    - module_type
+    - reference_id
+    type: object
+  internal_handler.UpdateCandidateRequest:
+    properties:
+      first_name:
+        type: string
+      last_name:
+        type: string
+      phone:
+        type: string
+    required:
+    - first_name
+    - last_name
+    type: object
   internal_handler.UpdateDepartmentRequest:
     properties:
       code:
@@ -261,6 +354,234 @@ info:
   title: Workaround Backend API
   version: "1.0"
 paths:
+  /v1/approvals/pending:
+    get:
+      consumes:
+      - application/json
+      description: Returns pending approvals for the authenticated approver
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+      summary: Get pending approvals
+      tags:
+      - Approvals
+  /v1/approvals/reference/{reference_id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves approvals for a module reference
+      parameters:
+      - description: Reference ID
+        in: path
+        name: reference_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+      summary: Get approvals by reference
+      tags:
+      - Approvals
+  /v1/approvals/reference/{reference_id}/act:
+    post:
+      consumes:
+      - application/json
+      description: Approves or rejects an approval request
+      parameters:
+      - description: Reference ID
+        in: path
+        name: reference_id
+        required: true
+        type: string
+      - description: Approval action payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.ActOnApprovalRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+      summary: Act on approval
+      tags:
+      - Approvals
+  /v1/approvals/setup:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves approval chain by module type
+      parameters:
+      - description: Module type
+        in: query
+        name: module_type
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+      summary: Get approval chain
+      tags:
+      - Approvals
+    post:
+      consumes:
+      - application/json
+      description: Creates an approval chain level for a module and department
+      parameters:
+      - description: Approval setup payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.CreateApprovalSetupRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+      summary: Create approval setup
+      tags:
+      - Approvals
+  /v1/approvals/setup/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes an approval setup level by id
+      parameters:
+      - description: Approval setup ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+      summary: Delete approval setup
+      tags:
+      - Approvals
+  /v1/approvals/submit:
+    post:
+      consumes:
+      - application/json
+      description: Submits a module record for approval
+      parameters:
+      - description: Submit for approval payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.SubmitForApprovalRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+      summary: Submit for approval
+      tags:
+      - Approvals
   /v1/auth/forgot-password:
     post:
       consumes:
@@ -424,6 +745,199 @@ paths:
       summary: Create a new user
       tags:
       - Users
+  /v1/candidates:
+    get:
+      consumes:
+      - application/json
+      description: Returns a paginated list of candidates
+      parameters:
+      - description: Page size
+        in: query
+        name: limit
+        type: integer
+      - description: Page offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+      summary: List candidates
+      tags:
+      - Candidates
+    post:
+      consumes:
+      - application/json
+      description: Creates a new candidate
+      parameters:
+      - description: Candidate payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.CreateCandidateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+      summary: Create candidate
+      tags:
+      - Candidates
+  /v1/candidates/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a candidate by id
+      parameters:
+      - description: Candidate ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+      summary: Delete candidate
+      tags:
+      - Candidates
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a candidate by id
+      parameters:
+      - description: Candidate ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+      summary: Get candidate by id
+      tags:
+      - Candidates
+    put:
+      consumes:
+      - application/json
+      description: Updates a candidate by id
+      parameters:
+      - description: Candidate ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Candidate payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.UpdateCandidateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+      summary: Update candidate
+      tags:
+      - Candidates
+  /v1/candidates/{id}/offers:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves offers for a candidate
+      parameters:
+      - description: Candidate ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+      summary: Get offers by candidate
+      tags:
+      - Offers
   /v1/departments:
     get:
       consumes:
@@ -1000,6 +1514,125 @@ paths:
       summary: Search levels
       tags:
       - Levels
+  /v1/offers:
+    get:
+      consumes:
+      - application/json
+      description: Returns a paginated list of offers
+      parameters:
+      - description: Page size
+        in: query
+        name: limit
+        type: integer
+      - description: Page offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+      summary: List offers
+      tags:
+      - Offers
+    post:
+      consumes:
+      - application/json
+      description: Creates a new candidate offer
+      parameters:
+      - description: Offer payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.CreateOfferRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+      summary: Create offer
+      tags:
+      - Offers
+  /v1/offers/{id}/accept:
+    put:
+      consumes:
+      - application/json
+      description: Accepts a candidate offer by id
+      parameters:
+      - description: Offer ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+      summary: Accept offer
+      tags:
+      - Offers
+  /v1/offers/{id}/reject:
+    put:
+      consumes:
+      - application/json
+      description: Rejects a candidate offer by id
+      parameters:
+      - description: Offer ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_falasefemi2_workaround-backend_internal_response.ErrorResponse'
+      summary: Reject offer
+      tags:
+      - Offers
   /v1/roles:
     get:
       consumes:
