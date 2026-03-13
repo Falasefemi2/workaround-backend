@@ -96,3 +96,9 @@ func (r *CandidateOfferRepo) UpdateOfferStatus(
 ) (db.Offer, error) {
 	return r.queries.UpdateOfferStatus(ctx, arg)
 }
+
+func (r *CandidateOfferRepo) GetOfferStatsByMonth(
+	ctx context.Context,
+) ([]db.GetOfferStatsByMonthRow, error) {
+	return r.queries.GetOfferStatsByMonth(ctx)
+}

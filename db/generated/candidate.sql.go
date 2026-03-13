@@ -168,6 +168,42 @@ func (q *Queries) GetOfferByID(ctx context.Context, id uuid.UUID) (Offer, error)
 	return i, err
 }
 
+const getOfferStatsByMonth = `-- name: GetOfferStatsByMonth :many
+SELECT 
+    DATE_TRUNC('month', created_at) AS month,
+    status,
+    COUNT(*) AS total
+FROM offers
+GROUP BY month, status
+ORDER BY month ASC
+`
+
+type GetOfferStatsByMonthRow struct {
+	Month  pgtype.Interval `json:"month"`
+	Status pgtype.Text     `json:"status"`
+	Total  int64           `json:"total"`
+}
+
+func (q *Queries) GetOfferStatsByMonth(ctx context.Context) ([]GetOfferStatsByMonthRow, error) {
+	rows, err := q.db.Query(ctx, getOfferStatsByMonth)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetOfferStatsByMonthRow
+	for rows.Next() {
+		var i GetOfferStatsByMonthRow
+		if err := rows.Scan(&i.Month, &i.Status, &i.Total); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getOffersByCandidate = `-- name: GetOffersByCandidate :many
 SELECT id, candidate_id, department_id, designation_id, level_id, proposed_start_date, new_start_date, offer_letter_url, status, created_by, created_at FROM offers
 WHERE candidate_id = $1

@@ -63,3 +63,12 @@ UPDATE candidates
 SET status = $2
 WHERE id = $1
 RETURNING *;
+
+-- name: GetOfferStatsByMonth :many
+SELECT 
+    DATE_TRUNC('month', created_at) AS month,
+    status,
+    COUNT(*) AS total
+FROM offers
+GROUP BY month, status
+ORDER BY month ASC;

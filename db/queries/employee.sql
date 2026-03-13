@@ -39,3 +39,12 @@ RETURNING *;
 -- name: DeleteEmployee :exec
 DELETE FROM employees
 WHERE id = $1;
+
+-- name: GetEmployeeCountByDepartment :many
+SELECT 
+    d.name AS department_name,
+    COUNT(e.id) AS employee_count
+FROM departments d
+LEFT JOIN employees e ON e.department_id = d.id
+GROUP BY d.id, d.name
+ORDER BY employee_count DESC;

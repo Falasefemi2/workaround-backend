@@ -82,6 +82,7 @@ func New(pool *pgxpool.Pool, cfg *config.Config) http.Handler {
 	roleHandler := handler.NewRoleHandler(roleService)
 	approvalHandler := handler.NewApprovalHandler(approvalService)
 	candidateOfferHandler := handler.NewCandidateOfferHandler(candidateOfferService)
+	adminDashboardHandler := handler.NewAdminDashboardHandler(employeeRepo, candidateOfferRepo)
 
 	authMiddleware := appmw.RequireAuth(cfg.Primary.JWTSecret)
 	adminOrHR := appmw.RequireRoles("admin", "hr")
@@ -95,6 +96,7 @@ func New(pool *pgxpool.Pool, cfg *config.Config) http.Handler {
 	roleHandler.RegisterRoutes(r, authMiddleware, adminOrHR)
 	approvalHandler.RegisterRoutes(r, authMiddleware, adminOrHR)
 	candidateOfferHandler.RegisterRoutes(r, authMiddleware, adminOrHR)
+	adminDashboardHandler.RegisterRoutes(r, authMiddleware, adminOrHR)
 
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		_, err := w.Write([]byte("ok"))

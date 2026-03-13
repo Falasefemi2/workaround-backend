@@ -61,3 +61,9 @@ func (r *EmployeeRepo) UpdateEmployee(
 ) (db.Employee, error) {
 	return r.queries.UpdateEmployee(ctx, arg)
 }
+
+func (r *EmployeeRepo) GetEmployeeCountByDepartment(
+	ctx context.Context,
+) ([]db.GetEmployeeCountByDepartmentRow, error) {
+	return r.queries.GetEmployeeCountByDepartment(ctx)
+}

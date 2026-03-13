@@ -145,6 +145,41 @@ func (q *Queries) GetEmployeeByUserID(ctx context.Context, userID pgtype.UUID) (
 	return i, err
 }
 
+const getEmployeeCountByDepartment = `-- name: GetEmployeeCountByDepartment :many
+SELECT 
+    d.name AS department_name,
+    COUNT(e.id) AS employee_count
+FROM departments d
+LEFT JOIN employees e ON e.department_id = d.id
+GROUP BY d.id, d.name
+ORDER BY employee_count DESC
+`
+
+type GetEmployeeCountByDepartmentRow struct {
+	DepartmentName string `json:"department_name"`
+	EmployeeCount  int64  `json:"employee_count"`
+}
+
+func (q *Queries) GetEmployeeCountByDepartment(ctx context.Context) ([]GetEmployeeCountByDepartmentRow, error) {
+	rows, err := q.db.Query(ctx, getEmployeeCountByDepartment)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetEmployeeCountByDepartmentRow
+	for rows.Next() {
+		var i GetEmployeeCountByDepartmentRow
+		if err := rows.Scan(&i.DepartmentName, &i.EmployeeCount); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listEmployees = `-- name: ListEmployees :many
 SELECT id, user_id, employee_number, department_id, unit_id, designation_id, level_id, employment_type, employment_status, date_of_employment, created_at FROM employees
 ORDER BY created_at DESC
