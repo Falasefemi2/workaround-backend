@@ -1,6 +1,8 @@
 package email
 
 import (
+	"log"
+
 	gomail "gopkg.in/mail.v2"
 )
 
@@ -15,11 +17,13 @@ type SMTPConfig struct {
 	Port     int
 	Username string
 	Password string
+	From     string
 }
 
 func SendEmail(cfg SMTPConfig, params EmailParams) error {
 	message := gomail.NewMessage()
-	message.SetHeader("From", cfg.Username)
+	message.SetHeader("From", cfg.From)
+	// message.SetHeader("From", cfg.Username)
 	message.SetHeader("To", params.To)
 	message.SetHeader("Subject", params.Subject)
 	message.SetBody("text/html", params.Body)
@@ -27,6 +31,7 @@ func SendEmail(cfg SMTPConfig, params EmailParams) error {
 	dialer := gomail.NewDialer(cfg.Host, cfg.Port, cfg.Username, cfg.Password)
 
 	if err := dialer.DialAndSend(message); err != nil {
+		log.Println("Failed to send email:", err)
 		return err
 	}
 

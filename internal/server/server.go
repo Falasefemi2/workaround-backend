@@ -52,6 +52,7 @@ func New(pool *pgxpool.Pool, cfg *config.Config) http.Handler {
 			Port:     cfg.Email.Port,
 			Username: cfg.Email.Username,
 			Password: cfg.Email.Password,
+			From:     cfg.Email.From,
 		},
 		cfg.Primary.JWTSecret,
 		passwordRepo,
@@ -71,6 +72,7 @@ func New(pool *pgxpool.Pool, cfg *config.Config) http.Handler {
 			Port:     cfg.Email.Port,
 			Username: cfg.Email.Username,
 			Password: cfg.Email.Password,
+			From:     cfg.Email.From,
 		},
 	)
 

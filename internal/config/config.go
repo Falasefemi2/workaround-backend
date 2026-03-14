@@ -43,6 +43,7 @@ type EmailConfig struct {
 	Port     int    `validate:"required"`
 	Username string `validate:"required"`
 	Password string `validate:"required"`
+	From     string `validate:"required,email"`
 }
 
 func Load() (*Config, error) {
@@ -68,10 +69,11 @@ func Load() (*Config, error) {
 			ConnMaxIdleTime: getEnvAsDuration("DB_CONN_MAX_IDLE_TIME", 30*time.Minute),
 		},
 		Email: EmailConfig{
-			Host:     getEnv("SMTP_HOST", "smtp.gmail.com"),
+			Host:     getEnv("SMTP_HOST", "no-reply@example.com"),
 			Port:     getEnvAsInt("SMTP_PORT", 587),
 			Username: getEnv("SMTP_USERNAME", ""),
 			Password: getEnv("SMTP_PASSWORD", ""),
+			From:     getEnv("SMTP_FROM", ""),
 		},
 	}
 
